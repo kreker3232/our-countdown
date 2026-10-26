@@ -1,0 +1,723 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#fbf5ef">
+  <meta name="description" content="Небольшой отсчёт до встречи с малышом — 9 декабря 2026 года.">
+  <title>Скоро рядом — до встречи с малышом</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --paper: #fbf5ef;
+      --card: #fffdfa;
+      --ink: #443638;
+      --muted: #806c6d;
+      --rose: #bd6671;
+      --rose-dark: #914b57;
+      --rose-soft: #f6e4e3;
+      --peach: #f8e8d9;
+      --lilac: #eee8f3;
+      --line: #eadbd5;
+      --shadow: 0 28px 80px rgba(97, 61, 62, .12), 0 3px 12px rgba(97, 61, 62, .05);
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      min-width: 320px;
+      min-height: 100svh;
+      margin: 0;
+      display: block;
+      overflow-x: hidden;
+      padding: 0;
+      color: var(--ink);
+      background:
+        radial-gradient(ellipse at 13% 13%, rgba(246, 219, 215, .76), transparent 30rem),
+        radial-gradient(ellipse at 92% 86%, rgba(233, 225, 239, .78), transparent 28rem),
+        var(--paper);
+      font-family: "Trebuchet MS", "Segoe UI", sans-serif;
+    }
+
+    .scene {
+      position: relative;
+      width: 100%;
+      min-height: 100svh;
+      display: grid;
+      place-items: center;
+      padding: 32px 20px 62px;
+      margin-inline: auto;
+      isolation: isolate;
+    }
+
+    .glow {
+      position: absolute;
+      z-index: -1;
+      width: min(78vw, 720px);
+      aspect-ratio: 1;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(255,255,255,.82) 0, rgba(255,255,255,.43) 43%, transparent 72%);
+      filter: blur(4px);
+    }
+
+    .postcard {
+      position: relative;
+      width: min(100%, 680px);
+      padding: clamp(30px, 6vw, 66px) clamp(22px, 8vw, 82px) 40px;
+      overflow: hidden;
+      text-align: center;
+      background: var(--card);
+      border: 1px solid rgba(234, 219, 213, .9);
+      border-radius: 30px;
+      box-shadow: var(--shadow);
+    }
+
+    .postcard::before,
+    .postcard::after {
+      position: absolute;
+      content: "";
+      width: 170px;
+      height: 170px;
+      border-radius: 50%;
+      pointer-events: none;
+      z-index: -0;
+      filter: blur(1px);
+    }
+
+    .postcard::before { left: -104px; top: 190px; background: rgba(248, 232, 217, .58); }
+    .postcard::after { right: -118px; bottom: -65px; background: rgba(238, 232, 243, .68); }
+
+    .tape {
+      position: absolute;
+      top: 17px;
+      left: 50%;
+      width: 104px;
+      height: 25px;
+      transform: translateX(-50%) rotate(-2deg);
+      background: rgba(242, 208, 174, .68);
+      clip-path: polygon(3% 0, 96% 5%, 100% 91%, 0 100%);
+      opacity: .85;
+    }
+
+    .eyebrow {
+      position: relative;
+      display: inline-flex;
+      align-items: center;
+      gap: 9px;
+      padding: 9px 14px;
+      color: var(--rose-dark);
+      background: #fbefec;
+      border: 1px solid #f1dcd9;
+      border-radius: 999px;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: .13em;
+      text-transform: uppercase;
+    }
+
+    .eyebrow svg { width: 13px; height: 13px; }
+
+    h1 {
+      margin: 25px 0 13px;
+      font-family: Georgia, "Times New Roman", serif;
+      font-size: clamp(38px, 8vw, 66px);
+      font-weight: 500;
+      letter-spacing: -.055em;
+      line-height: .99;
+    }
+
+    h1 span {
+      display: block;
+      margin-top: 7px;
+      color: var(--rose);
+      font-style: italic;
+      font-weight: 400;
+    }
+
+    .intro {
+      max-width: 410px;
+      margin: 0 auto;
+      color: var(--muted);
+      font-size: 16px;
+      line-height: 1.7;
+    }
+
+    .date-note {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      margin: 23px 0 26px;
+      padding: 10px 15px;
+      border: 1px dashed #d9b9b4;
+      border-radius: 12px;
+      color: #674c4e;
+      background: rgba(255, 250, 247, .8);
+      font-size: 14px;
+      font-weight: 700;
+    }
+
+    .date-note svg { width: 17px; height: 17px; color: var(--rose); }
+
+    .region-switch {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      white-space: nowrap;
+    }
+
+    .region-select {
+      max-width: 190px;
+      padding: 3px 20px 3px 2px;
+      color: var(--rose-dark);
+      background: transparent;
+      border: 0;
+      border-radius: 5px;
+      font: inherit;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    .region-select:focus-visible { outline: 2px solid var(--rose); outline-offset: 2px; }
+
+    .button {
+      display: inline-flex;
+      min-height: 56px;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      padding: 0 23px;
+      color: #fffaf7;
+      background: var(--rose);
+      border: 0;
+      border-radius: 999px;
+      box-shadow: 0 9px 22px rgba(189, 102, 113, .22);
+      font: inherit;
+      font-size: 15px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: transform .22s ease, background-color .22s ease, box-shadow .22s ease;
+    }
+
+    .button:hover { transform: translateY(-2px); background: var(--rose-dark); box-shadow: 0 12px 26px rgba(145, 75, 87, .24); }
+    .button:active { transform: translateY(0); }
+    .button:focus-visible { outline: 3px solid #594146; outline-offset: 4px; }
+    .button svg { width: 18px; height: 18px; }
+
+    .countdown {
+      margin: 31px auto 0;
+      animation: arrive .45s ease both;
+    }
+
+    .countdown[hidden] { display: none; }
+
+    .countdown-label {
+      margin: 0 0 14px;
+      color: var(--muted);
+      font-size: 13px;
+      letter-spacing: .03em;
+    }
+
+    .units {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr) auto minmax(0, 1fr) auto minmax(0, 1fr);
+      align-items: start;
+      gap: 8px;
+    }
+
+    .separator {
+      align-self: center;
+      margin-top: -7px;
+      color: #c88f92;
+      font-family: Georgia, "Times New Roman", serif;
+      font-size: clamp(17px, 4vw, 25px);
+      line-height: 1;
+    }
+
+    .unit {
+      min-width: 0;
+      padding: 17px 6px 14px;
+      background: #fcf4f0;
+      border: 1px solid #f0e1db;
+      border-radius: 16px;
+    }
+
+    .unit:nth-child(2) { background: #f8f1ee; }
+    .unit:nth-child(3) { background: #f3eff5; border-color: #e9e0ed; }
+    .unit:nth-child(4) { background: #f9f1e8; border-color: #eee1d2; }
+
+    .number {
+      display: block;
+      font-family: Georgia, "Times New Roman", serif;
+      font-size: clamp(27px, 6vw, 40px);
+      font-variant-numeric: tabular-nums;
+      letter-spacing: -.04em;
+      line-height: 1;
+    }
+
+    .unit-label {
+      display: block;
+      margin-top: 8px;
+      color: var(--muted);
+      font-size: 11px;
+      letter-spacing: .04em;
+    }
+
+    .reached {
+      margin: 17px 0 0;
+      color: var(--rose-dark);
+      font-family: Georgia, "Times New Roman", serif;
+      font-size: 18px;
+      font-style: italic;
+    }
+
+    .footer-note {
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      margin-top: 31px;
+      color: #957f7e;
+      font-family: Georgia, "Times New Roman", serif;
+      font-size: 14px;
+      font-style: italic;
+    }
+
+    .footer-note svg { width: 13px; height: 13px; color: var(--rose); }
+
+    .float-heart {
+      position: absolute;
+      color: #d89499;
+      opacity: .66;
+      animation: drift 4s ease-in-out infinite;
+      pointer-events: none;
+    }
+
+    .float-heart svg { display: block; width: 100%; height: 100%; }
+    .heart-a { width: 31px; height: 31px; left: 5%; top: 19%; transform: rotate(-14deg); }
+    .heart-b { width: 20px; height: 20px; right: 5%; top: 29%; color: #d8ad87; animation-delay: .8s; }
+    .heart-c { width: 24px; height: 24px; right: 8%; bottom: 15%; color: #b99cc7; animation-delay: 1.5s; }
+
+    .sparkle {
+      position: absolute;
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #e7b988;
+      box-shadow: 0 0 0 5px rgba(231, 185, 136, .16);
+      pointer-events: none;
+    }
+
+    .sparkle-a { left: 13%; bottom: 25%; }
+    .sparkle-b { right: 14%; top: 16%; width: 6px; height: 6px; background: #c8a9ce; box-shadow: 0 0 0 5px rgba(200, 169, 206, .16); }
+
+    .scroll-cue {
+      position: absolute;
+      bottom: 20px;
+      left: 50%;
+      display: inline-flex;
+      align-items: center;
+      gap: 9px;
+      padding: 10px 15px;
+      color: #806c6d;
+      text-decoration: none;
+      font-size: 12px;
+      letter-spacing: .04em;
+      transform: translateX(-50%);
+      transition: color .2s ease, background-color .2s ease;
+      animation: cue-bob 2.2s ease-in-out infinite;
+    }
+
+    .scroll-cue:hover { color: var(--rose-dark); background: rgba(255,255,255,.55); border-radius: 999px; }
+    .scroll-cue:focus-visible { outline: 2px solid var(--rose); outline-offset: 2px; border-radius: 999px; }
+    .scroll-cue svg { width: 15px; height: 15px; }
+
+    .memory {
+      position: relative;
+      min-height: 100svh;
+      display: grid;
+      place-items: center;
+      padding: clamp(68px, 9vw, 110px) 24px;
+      overflow: hidden;
+      isolation: isolate;
+      background:
+        radial-gradient(ellipse at 78% 22%, rgba(250, 228, 208, .72), transparent 30rem),
+        radial-gradient(ellipse at 17% 86%, rgba(231, 221, 238, .78), transparent 28rem),
+        #f7eee8;
+    }
+
+    .memory::before {
+      position: absolute;
+      z-index: -1;
+      width: min(76vw, 740px);
+      aspect-ratio: 1;
+      content: "";
+      border: 1px solid rgba(189, 102, 113, .14);
+      border-radius: 50%;
+      box-shadow: 0 0 0 42px rgba(255,255,255,.13), 0 0 0 84px rgba(255,255,255,.1);
+    }
+
+    .memory-stage {
+      width: min(1040px, 100%);
+      display: grid;
+      grid-template-columns: minmax(0, .88fr) minmax(0, 1fr);
+      align-items: center;
+      gap: clamp(42px, 8vw, 112px);
+    }
+
+    .memory-copy {
+      opacity: 0;
+      transform: translate3d(-34px, 20px, 0);
+      transition: opacity .75s ease, transform .85s cubic-bezier(.2,.8,.2,1);
+    }
+
+    .memory.is-visible .memory-copy { opacity: 1; transform: translate3d(0,0,0); }
+
+    .memory-kicker {
+      display: inline-block;
+      margin-bottom: 17px;
+      color: var(--rose-dark);
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: .16em;
+      text-transform: uppercase;
+    }
+
+    .memory-title {
+      margin: 0;
+      font-family: Georgia, "Times New Roman", serif;
+      font-size: clamp(42px, 6.7vw, 72px);
+      font-weight: 500;
+      letter-spacing: -.06em;
+      line-height: .98;
+    }
+
+    .memory-title em { color: var(--rose); font-weight: 400; }
+
+    .memory-description {
+      max-width: 390px;
+      margin: 23px 0 0;
+      color: #715e60;
+      font-size: 17px;
+      line-height: 1.75;
+    }
+
+    .love-note {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      max-width: 390px;
+      margin-top: 28px;
+      padding: 15px 17px;
+      color: #704e53;
+      background: rgba(255, 253, 250, .72);
+      border: 1px solid rgba(234, 219, 213, .86);
+      border-radius: 15px;
+      font-family: Georgia, "Times New Roman", serif;
+      font-size: 16px;
+      font-style: italic;
+      line-height: 1.45;
+    }
+
+    .love-note svg { flex: 0 0 auto; width: 18px; height: 18px; color: var(--rose); }
+
+    .memory-caption {
+      margin: 21px 0 0;
+      color: #927f7e;
+      font-family: Georgia, "Times New Roman", serif;
+      font-size: 14px;
+      font-style: italic;
+    }
+
+    .photo-card {
+      position: relative;
+      width: min(100%, 440px);
+      justify-self: center;
+      padding: 13px 13px 18px;
+      background: #fffefa;
+      border: 1px solid rgba(234, 219, 213, .85);
+      border-radius: 4px;
+      box-shadow: 0 30px 68px rgba(76, 52, 48, .2), 0 4px 14px rgba(76, 52, 48, .08);
+      opacity: 0;
+      filter: blur(12px);
+      transform: translate3d(50px, 54px, 0) rotate(7deg) scale(.88);
+      transition: opacity .95s ease .13s, filter 1s ease .13s, transform 1s cubic-bezier(.16,1,.3,1) .13s;
+    }
+
+    .memory.is-visible .photo-card {
+      opacity: 1;
+      filter: blur(0);
+      transform: translate3d(0,0,0) rotate(-2deg) scale(1);
+    }
+
+    .photo-card::before {
+      position: absolute;
+      z-index: 2;
+      top: -12px;
+      left: 50%;
+      width: 104px;
+      height: 26px;
+      content: "";
+      background: rgba(235, 204, 166, .75);
+      clip-path: polygon(2% 5%, 97% 0, 100% 94%, 0 100%);
+      transform: translateX(-50%) rotate(-2deg);
+    }
+
+    .photo-image {
+      width: 100%;
+      overflow: hidden;
+      background: #eee6df;
+      aspect-ratio: 843 / 1280;
+    }
+
+    .photo-image img {
+      display: block;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      transform: scale(1.07);
+      transition: transform 1.4s cubic-bezier(.2,.8,.2,1) .45s;
+    }
+
+    .memory.is-visible .photo-image img { transform: scale(1); }
+
+    .photo-card figcaption {
+      padding: 14px 4px 0;
+      color: #786466;
+      font-family: Georgia, "Times New Roman", serif;
+      font-size: 14px;
+      font-style: italic;
+      text-align: center;
+    }
+
+    .photo-stamp {
+      position: absolute;
+      right: -21px;
+      bottom: 58px;
+      display: grid;
+      width: 55px;
+      height: 55px;
+      place-items: center;
+      color: #fffaf7;
+      background: var(--rose);
+      border: 4px solid #f7eee8;
+      border-radius: 50%;
+      font-family: Georgia, "Times New Roman", serif;
+      font-size: 25px;
+      transform: rotate(12deg) scale(.6);
+      opacity: 0;
+      transition: opacity .5s ease .8s, transform .55s cubic-bezier(.2,.9,.3,1.4) .8s;
+    }
+
+    .memory.is-visible .photo-stamp { opacity: 1; transform: rotate(12deg) scale(1); }
+
+    @keyframes cue-bob {
+      0%, 100% { translate: 0 0; }
+      50% { translate: 0 5px; }
+    }
+
+    .visually-hidden {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      margin: -1px;
+      overflow: hidden;
+      clip: rect(0, 0, 0, 0);
+      white-space: nowrap;
+      border: 0;
+    }
+
+    @keyframes arrive {
+      from { opacity: 0; transform: translateY(8px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    @keyframes drift {
+      0%, 100% { translate: 0 0; }
+      50% { translate: 0 -8px; }
+    }
+
+    @media (max-width: 540px) {
+      .scene { min-height: 100svh; padding: 20px 14px 60px; }
+      .postcard { padding-top: 52px; border-radius: 24px; }
+      .units { gap: 5px; }
+      .unit { padding: 15px 3px 12px; border-radius: 13px; }
+      .unit-label { font-size: 10px; }
+      .heart-a { left: 1%; top: 12%; }
+      .heart-b { right: 0; top: 25%; }
+      .heart-c { right: 1%; bottom: 11%; }
+      .memory { padding: 78px 10px 58px; }
+      .memory-stage { grid-template-columns: minmax(0, 1fr); gap: 38px; }
+      .memory-copy { text-align: center; }
+      .memory-description, .love-note { margin-inline: auto; }
+      .love-note { text-align: left; }
+      .photo-card { width: min(84%, 360px); }
+      .memory-caption { margin-top: 17px; }
+      .photo-stamp { right: -16px; width: 47px; height: 47px; font-size: 21px; }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { scroll-behavior: auto !important; animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
+      .memory-copy, .photo-card { opacity: 1; filter: none; transform: none; }
+      .photo-image img { transform: none; }
+      .photo-stamp { opacity: 1; transform: rotate(12deg); }
+    }
+  </style>
+</head>
+<body>
+  <main>
+  <section class="scene" aria-label="Обратный отсчёт до встречи">
+    <div class="glow" aria-hidden="true"></div>
+    <span class="float-heart heart-a" aria-hidden="true"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 21s-8.2-4.9-9.8-10C.7 6.2 4 2.8 8 4.1c1.8.6 3 2.3 4 3.6 1-1.3 2.2-3 4-3.6 4-1.3 7.3 2.1 5.8 6.9C20.2 16.1 12 21 12 21Z"/></svg></span>
+    <span class="float-heart heart-b" aria-hidden="true"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 21s-8.2-4.9-9.8-10C.7 6.2 4 2.8 8 4.1c1.8.6 3 2.3 4 3.6 1-1.3 2.2-3 4-3.6 4-1.3 7.3 2.1 5.8 6.9C20.2 16.1 12 21 12 21Z"/></svg></span>
+    <span class="float-heart heart-c" aria-hidden="true"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 21s-8.2-4.9-9.8-10C.7 6.2 4 2.8 8 4.1c1.8.6 3 2.3 4 3.6 1-1.3 2.2-3 4-3.6 4-1.3 7.3 2.1 5.8 6.9C20.2 16.1 12 21 12 21Z"/></svg></span>
+    <span class="sparkle sparkle-a" aria-hidden="true"></span>
+    <span class="sparkle sparkle-b" aria-hidden="true"></span>
+
+    <article class="postcard">
+      <span class="tape" aria-hidden="true"></span>
+      <div class="eyebrow">
+        <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 20s-7-4.2-8.4-8.6C2.4 7.3 5.2 4.4 8.6 5.5c1.5.5 2.6 1.9 3.4 3 0.8-1.1 1.9-2.5 3.4-3 3.4-1.1 6.2 1.8 5 5.9C19 15.8 12 20 12 20Z" fill="currentColor"/></svg>
+        я очень сильно тебя люблю
+      </div>
+
+      <h1>Скоро<span>рядом</span></h1>
+      <p class="intro">До того дня, когда я приеду к тебе, малыш, и смогу обнять тебя по-настоящему.</p>
+
+      <div class="date-note">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="5" width="17" height="16" rx="3"/><path d="M7.5 3.5v3M16.5 3.5v3M3.5 9.5h17M8 13h.01M12 13h.01M16 13h.01M8 16.5h.01M12 16.5h.01"/></svg>
+        <span>9 декабря 2026 <span aria-hidden="true">·</span> 00:00</span>
+        <label class="region-switch">в
+          <span class="visually-hidden">Регион встречи</span>
+          <select class="region-select" id="region-select" aria-label="Регион встречи">
+            <option value="moscow" selected>Санкт-Петербурге</option>
+            <option value="barnaul">Барнауле</option>
+          </select>
+        </label>
+      </div>
+
+      <div>
+        <button class="button" id="toggle-countdown" type="button" aria-expanded="false" aria-controls="countdown">
+          <span id="button-label">Узнать, сколько осталось</span>
+          <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 20s-7-4.2-8.4-8.6C2.4 7.3 5.2 4.4 8.6 5.5c1.5.5 2.6 1.9 3.4 3 0.8-1.1 1.9-2.5 3.4-3 3.4-1.1 6.2 1.8 5 5.9C19 15.8 12 20 12 20Z" fill="currentColor"/></svg>
+        </button>
+      </div>
+
+      <section class="countdown" id="countdown" aria-label="Обратный отсчёт до встречи" aria-live="off" hidden>
+        <p class="countdown-label" id="countdown-caption">Каждая секундочка приближает встречу</p>
+        <div class="units">
+          <div class="unit"><span class="number" id="days">000</span><span class="unit-label">дней</span></div>
+          <span class="separator" aria-hidden="true">:</span>
+          <div class="unit"><span class="number" id="hours">00</span><span class="unit-label">часов</span></div>
+          <span class="separator" aria-hidden="true">:</span>
+          <div class="unit"><span class="number" id="minutes">00</span><span class="unit-label">минут</span></div>
+          <span class="separator" aria-hidden="true">:</span>
+          <div class="unit"><span class="number" id="seconds">00</span><span class="unit-label">секунд</span></div>
+        </div>
+        <p class="reached" id="reached-message" hidden>Сегодня мы наконец рядом ♡</p>
+      </section>
+
+      <footer class="footer-note">
+        <span>считаю дни до тебя</span>
+        <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 21s-8.2-4.9-9.8-10C.7 6.2 4 2.8 8 4.1c1.8.6 3 2.3 4 3.6 1-1.3 2.2-3 4-3.6 4-1.3 7.3 2.1 5.8 6.9C20.2 16.1 12 21 12 21Z"/></svg>
+      </footer>
+    </article>
+    <a class="scroll-cue" href="#our-moment">
+      <span>ниже — маленькая мечта</span>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>
+    </a>
+  </section>
+
+  <section class="memory" id="our-moment" aria-labelledby="memory-title">
+    <div class="memory-stage" id="memory-stage">
+      <div class="memory-copy">
+        <span class="memory-kicker">когда-нибудь потом</span>
+        <h2 class="memory-title" id="memory-title">А потом —<br><em>объятия</em></h2>
+        <p class="memory-description">Пока мы считаем дни до встречи, пусть здесь живёт одна красивая мечта о нашем будущем.</p>
+        <div class="love-note">
+          <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 21s-8.2-4.9-9.8-10C.7 6.2 4 2.8 8 4.1c1.8.6 3 2.3 4 3.6 1-1.3 2.2-3 4-3.6 4-1.3 7.3 2.1 5.8 6.9C20.2 16.1 12 21 12 21Z"/></svg>
+          <span>Я очень сильно тебя люблю, малыш.</span>
+        </div>
+        <p class="memory-caption">Пролистай вверх — и отсчёт продолжится.</p>
+      </div>
+
+      <figure class="photo-card">
+        <div class="photo-image">
+          <img src="our-moment.jpg" alt="Пара в свадебных образах идёт по парку, держась за руки." loading="lazy" width="843" height="1280">
+        </div>
+        <figcaption>маленькая мечта о нашем будущем</figcaption>
+        <span class="photo-stamp" aria-hidden="true">♡</span>
+      </figure>
+    </div>
+  </section>
+  </main>
+
+  <script>
+    // Разница учитывается для выбранного региона: Санкт-Петербург (UTC+3) или Барнаул (UTC+7).
+    const targetTimes = {
+      moscow: Date.UTC(2026, 11, 8, 21, 0, 0),
+      barnaul: Date.UTC(2026, 11, 8, 17, 0, 0)
+    };
+    const regionSelect = document.getElementById("region-select");
+    const countdown = document.getElementById("countdown");
+    const button = document.getElementById("toggle-countdown");
+    const buttonLabel = document.getElementById("button-label");
+    const caption = document.getElementById("countdown-caption");
+    const reachedMessage = document.getElementById("reached-message");
+    let intervalId;
+
+    function updateCountdown() {
+      const remainingMs = Math.max(0, targetTimes[regionSelect.value] - Date.now());
+      const totalSeconds = Math.floor(remainingMs / 1000);
+      const days = Math.floor(totalSeconds / 86400);
+      const hours = Math.floor((totalSeconds % 86400) / 3600);
+      const minutes = Math.floor((totalSeconds % 3600) / 60);
+      const seconds = totalSeconds % 60;
+
+      document.getElementById("days").textContent = String(days).padStart(3, "0");
+      document.getElementById("hours").textContent = String(hours).padStart(2, "0");
+      document.getElementById("minutes").textContent = String(minutes).padStart(2, "0");
+      document.getElementById("seconds").textContent = String(seconds).padStart(2, "0");
+
+      const isHere = remainingMs === 0;
+      reachedMessage.hidden = !isHere;
+      caption.textContent = isHere ? "Тот самый день уже наступил" : "Каждая секундочка приближает встречу";
+      if (isHere) {
+        clearInterval(intervalId);
+        document.title = "Сегодня мы наконец рядом ♡";
+      }
+    }
+
+    button.addEventListener("click", () => {
+      const isOpen = !countdown.hidden;
+      countdown.hidden = isOpen;
+      button.setAttribute("aria-expanded", String(!isOpen));
+      buttonLabel.textContent = isOpen ? "Узнать, сколько осталось" : "Спрятать таймер";
+
+      if (!isOpen) {
+        updateCountdown();
+        intervalId = window.setInterval(updateCountdown, 250);
+      } else {
+        window.clearInterval(intervalId);
+      }
+    });
+
+    regionSelect.addEventListener("change", () => {
+      if (!countdown.hidden) updateCountdown();
+    });
+
+    const memorySection = document.querySelector(".memory");
+    const revealObserver = new IntersectionObserver((entries, observer) => {
+      for (const entry of entries) {
+        if (entry.isIntersecting) {
+          memorySection.classList.add("is-visible");
+          observer.unobserve(entry.target);
+        }
+      }
+    }, { threshold: 0.22 });
+    revealObserver.observe(document.getElementById("memory-stage"));
+  </script>
+</body>
+</html>
+
