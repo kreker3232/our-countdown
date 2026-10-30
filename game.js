@@ -390,11 +390,37 @@
     draw();
   }
 
+  function makePlatform(y, score = 0, safe = false) {
+    const progress = Math.min(1, score / 900);
+    let type = "normal";
+    if (!safe) {
+      const roll = Math.random();
+      const breakChance = 0.1 + progress * 0.06;
+      const spikeChance = 0.055 + progress * 0.035;
+      const springChance = 0.075;
+      if (roll < breakChance) type = "breakable";
+      else if (roll < breakChance + spikeChance) type = "spike";
+      else if (roll < breakChance + spikeChance + springChance) type = "spring";
+    }
+    return {
+      x: 24 + Math.random() * (WIDTH - 104),
+      y,
+      width: 76,
+      type,
+      moving: type === "normal" && !safe && Math.random() > 0.76 - Math.min(0.08, progress * 0.08),
+      phase: Math.random() * Math.PI * 2,
+      broken: false,
+      brokenAt: 0
+    };
+  }
+
   function newGame() {
     const platforms = [];
     let y = HEIGHT - 28;
+    let count = 0;
     while (y > -HEIGHT) {
-      platforms.push({ x: 24 + Math.random() * (WIDTH - 104), y, width: 76, moving: Math.random() > 0.72, phase: Math.random() * Math.PI * 2 });
+      platforms.push(makePlatform(y, 0, count < 4));
+      count += 1;
       y -= 58 + Math.random() * 31;
     }
     return {
@@ -467,10 +493,27 @@
 
     if (game.vy > 0) {
       for (const platform of game.platforms) {
+        if (platform.broken) continue;
         const platformX = platform.x + (platform.moving ? Math.sin(now / 700 + platform.phase) * 38 : 0);
         if (oldY + 18 <= platform.y && game.y + 18 >= platform.y && game.x + 13 > platformX && game.x - 13 < platformX + platform.width) {
+          if (platform.type === "spike") {
+            game.y = platform.y - 18;
+            game.toast = "Осторожно, шипы!";
+            game.toastUntil = now + 1000;
+            endGame();
+            break;
+          }
           game.y = platform.y - 18;
-          game.vy = JUMP;
+          game.vy = platform.type === "spring" ? JUMP * 1.48 : JUMP;
+          if (platform.type === "breakable") {
+            platform.broken = true;
+            platform.brokenAt = now;
+            game.toast = "Платформа исчезает!";
+            game.toastUntil = now + 900;
+          } else if (platform.type === "spring") {
+            game.toast = "Пружинка! Высокий прыжок!";
+            game.toastUntil = now + 1100;
+          }
           break;
         }
       }
@@ -480,11 +523,11 @@
     if (screenY < 205) game.camera += 205 - screenY;
     game.score = Math.max(game.score, Math.floor((game.startY - game.y) / 5));
 
-    game.platforms = game.platforms.filter((p) => p.y + game.camera < HEIGHT + 36);
+    game.platforms = game.platforms.filter((p) => p.y + game.camera < HEIGHT + 36 && (!p.broken || now - p.brokenAt < 330));
     let minY = Math.min(...game.platforms.map((p) => p.y), HEIGHT);
     while (minY + game.camera > -45) {
       minY -= 58 + Math.random() * 31;
-      game.platforms.push({ x: 24 + Math.random() * (WIDTH - 104), y: minY, width: 76, moving: Math.random() > 0.72, phase: Math.random() * Math.PI * 2 });
+      game.platforms.push(makePlatform(minY, game.score));
     }
 
     if (game.y + game.camera > HEIGHT + 35) endGame();
@@ -507,18 +550,58 @@
     }
   }
 
-  function drawPlatform(x, y, width) {
-    ctx.fillStyle = "#fffdfa";
-    ctx.strokeStyle = "#d9b9b4";
+  function drawPlatform(x, y, width, platform = {}, now = performance.now()) {
+    const { type = "normal", broken = false, brokenAt = 0 } = platform;
+    ctx.save();
+    if (broken) ctx.globalAlpha = Math.max(0, 1 - (now - brokenAt) / 330);
+    ctx.fillStyle = type === "spike" ? "#f7e3e0" : "#fffdfa";
+    ctx.strokeStyle = type === "breakable" ? "#d8a36e" : type === "spike" ? "#ca7379" : "#d9b9b4";
     ctx.lineWidth = 1.5;
     ctx.beginPath();
     ctx.roundRect(x, y, width, 12, 6);
     ctx.fill();
     ctx.stroke();
-    ctx.fillStyle = "#dfadb0";
-    ctx.beginPath();
-    ctx.ellipse(x + width / 2, y + 3, width * .35, 2.5, 0, 0, Math.PI * 2);
-    ctx.fill();
+    if (type === "spike") {
+      ctx.fillStyle = "#a94f5d";
+      for (let sx = x + 5; sx < x + width - 4; sx += 12) {
+        ctx.beginPath();
+        ctx.moveTo(sx, y + 3);
+        ctx.lineTo(sx + 5, y - 7);
+        ctx.lineTo(sx + 10, y + 3);
+        ctx.closePath();
+        ctx.fill();
+      }
+    } else if (type === "spring") {
+      ctx.strokeStyle = "#bd6671";
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(x + width / 2, y + 3);
+      ctx.lineTo(x + width / 2 - 5, y - 1);
+      ctx.lineTo(x + width / 2 + 5, y - 5);
+      ctx.lineTo(x + width / 2 - 5, y - 9);
+      ctx.lineTo(x + width / 2, y - 12);
+      ctx.stroke();
+      ctx.fillStyle = "#e9b9b7";
+      ctx.beginPath();
+      ctx.ellipse(x + width / 2, y - 13, 5, 2.5, 0, 0, Math.PI * 2);
+      ctx.fill();
+    } else {
+      ctx.fillStyle = type === "breakable" ? "#e8bb87" : "#dfadb0";
+      ctx.beginPath();
+      ctx.ellipse(x + width / 2, y + 3, width * .35, 2.5, 0, 0, Math.PI * 2);
+      ctx.fill();
+      if (type === "breakable") {
+        ctx.strokeStyle = "#bf895b";
+        ctx.lineWidth = 1.2;
+        ctx.beginPath();
+        ctx.moveTo(x + width / 2, y + 2);
+        ctx.lineTo(x + width / 2 - 5, y + 7);
+        ctx.lineTo(x + width / 2 + 1, y + 9);
+        ctx.lineTo(x + width / 2 + 5, y + 6);
+        ctx.stroke();
+      }
+    }
+    ctx.restore();
   }
 
   function drawPlayer(x, y) {
@@ -557,9 +640,26 @@
     for (const platform of game.platforms) {
       const x = platform.x + (platform.moving ? Math.sin(now / 700 + platform.phase) * 38 : 0);
       const y = platform.y + game.camera;
-      if (y > -20 && y < HEIGHT + 20) drawPlatform(x, y, platform.width);
+      if (y > -24 && y < HEIGHT + 20) drawPlatform(x, y, platform.width, platform, now);
     }
     drawPlayer(game.x, game.y + game.camera);
+    if (game.toast && now < game.toastUntil) {
+      ctx.save();
+      ctx.font = "600 14px Trebuchet MS, sans-serif";
+      const labelWidth = ctx.measureText(game.toast).width + 26;
+      ctx.fillStyle = "rgba(255,253,250,.94)";
+      ctx.strokeStyle = "rgba(189,102,113,.3)";
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.roundRect((WIDTH - labelWidth) / 2, 18, labelWidth, 34, 17);
+      ctx.fill();
+      ctx.stroke();
+      ctx.fillStyle = "#914b57";
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      ctx.fillText(game.toast, WIDTH / 2, 35);
+      ctx.restore();
+    }
   }
 
   document.addEventListener("keydown", (event) => {
