@@ -573,6 +573,7 @@
     .account-dialog > p { margin: 0 0 18px; color: var(--muted); font-size: 13px; line-height: 1.55; }
     .account-form { display: grid; gap: 12px; }
     .account-form label { display: grid; gap: 6px; color: var(--muted); font-size: 12px; font-weight: 700; }
+    .account-form label[hidden] { display: none; }
     .account-form input { min-height: 46px; width: 100%; padding: 0 13px; border: 1px solid var(--line); border-radius: 12px; color: var(--ink); background: #fff; font: inherit; }
     .account-form input:focus { outline: 2px solid #d699a0; outline-offset: 1px; }
     .account-message { min-height: 18px; margin: 0; color: var(--rose-dark); font-size: 12px; line-height: 1.45; }
@@ -866,7 +867,7 @@
     }, { threshold: 0.22 });
     revealObserver.observe(document.getElementById("memory-stage"));
   </script>
-  <script src="game.js"></script>
+  <script src="game.js?v=3"></script>
 </body>
 </html>
 
