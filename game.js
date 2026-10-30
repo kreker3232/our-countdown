@@ -3,7 +3,10 @@
 
   // Fill these in after creating a Supabase project. The public anon key is
   // designed for browser use; security comes from the RLS policies in schema.sql.
-  const backend = { url: "", anonKey: "" };
+  const backend = {
+    url: "https://hbspwnhddcraepdbqeni.supabase.co",
+    anonKey: "sb_publishable_rUFafb7VlBAqAu8bvIOTvQ_d9Ts92yn"
+  };
   const configured = Boolean(backend.url && backend.anonKey);
   const apiRoot = backend.url.replace(/\/$/, "");
   const $ = (selector) => document.querySelector(selector);
