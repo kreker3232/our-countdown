@@ -579,6 +579,7 @@
     .account-message { min-height: 18px; margin: 0; color: var(--rose-dark); font-size: 12px; line-height: 1.45; }
     .account-message:empty { display: none; }
     .account-switch { display: block; margin: 12px auto 0; padding: 10px; border: 0; color: var(--rose-dark); background: transparent; font: inherit; font-size: 12px; font-weight: 700; cursor: pointer; }
+    .account-switch[hidden] { display: none; }
     .account-forgot { display: block; margin: 0 auto; padding: 10px; border: 0; color: var(--rose-dark); background: transparent; font: inherit; font-size: 12px; text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
 
     .memory.is-visible .photo-stamp { opacity: 1; transform: rotate(12deg) scale(1); }
@@ -778,6 +779,7 @@
             <p class="leader-empty">Пока рекорды сохраняются только на этом устройстве. Подключим общий аккаунт — здесь появится таблица для всех игроков.</p>
           </div>
           <p class="leader-note" id="leader-note">Войди или создай аккаунт, чтобы имя и рекорд сохранялись в общем лидерборде.</p>
+          <button class="account-switch" id="change-password-open" type="button" hidden>Сменить пароль</button>
         </aside>
       </div>
     </div>
@@ -867,7 +869,7 @@
     }, { threshold: 0.22 });
     revealObserver.observe(document.getElementById("memory-stage"));
   </script>
-  <script src="game.js?v=4"></script>
+  <script src="game.js?v=5"></script>
 </body>
 </html>
 
