@@ -288,12 +288,13 @@
   function endGame() {
     if (!game?.running) return;
     game.running = false;
-    if (game.score > (Number(saved.best) || 0)) {
+    const isNewRecord = game.score > (Number(saved.best) || 0);
+    if (isNewRecord) {
       saved.best = game.score;
       saveLocal();
     }
     updateStats();
-    $("#game-overlay-title").textContent = game.score >= saved.best ? "Новый рекорд!" : "Почти получилось!";
+    $("#game-overlay-title").textContent = isNewRecord ? "Новый рекорд!" : "Почти получилось!";
     $("#game-overlay-copy").textContent = `${saved.name ? `${saved.name}, ` : ""}твой счёт — ${game.score.toLocaleString("ru-RU")} очков. Ещё попытка?`;
     startButton.textContent = "Играть ещё";
     overlay.hidden = false;
