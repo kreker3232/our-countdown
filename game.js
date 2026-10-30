@@ -55,7 +55,7 @@
       return "Этот email ещё не подтверждён. Проверь Authentication → Users. Для письма подтверждения нужен доступный SMTP.";
     }
     if (normalized.includes("invalid_credentials") || normalized.includes("invalid login credentials")) {
-      return "Не удалось войти. Проверь email и пароль. Если на этом устройстве было только сохранено имя, сначала создай настоящий аккаунт.";
+      return "Supabase не принял email и пароль. Проверь раскладку клавиатуры, регистр и пароль, заданный при создании этого аккаунта.";
     }
     if (normalized.includes("email_address_not_authorized")) {
       return "Supabase пока не может отправить письмо на этот адрес. Настрой SMTP или используй адрес участника команды проекта.";
