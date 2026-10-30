@@ -578,6 +578,7 @@
     .account-message { min-height: 18px; margin: 0; color: var(--rose-dark); font-size: 12px; line-height: 1.45; }
     .account-message:empty { display: none; }
     .account-switch { display: block; margin: 12px auto 0; padding: 10px; border: 0; color: var(--rose-dark); background: transparent; font: inherit; font-size: 12px; font-weight: 700; cursor: pointer; }
+    .account-forgot { display: block; margin: 0 auto; padding: 10px; border: 0; color: var(--rose-dark); background: transparent; font: inherit; font-size: 12px; text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
 
     .memory.is-visible .photo-stamp { opacity: 1; transform: rotate(12deg) scale(1); }
 
@@ -790,10 +791,12 @@
       <form class="account-form" id="account-form">
         <label id="player-name-field">Имя в игре<input id="player-name" name="name" autocomplete="nickname" maxlength="20" placeholder="Например, Малыш" required></label>
         <label>Email<input id="player-email" name="email" type="email" autocomplete="email" required></label>
-        <label>Пароль<input id="player-password" name="password" type="password" autocomplete="current-password" minlength="8" required></label>
+        <label id="password-field">Пароль<input id="player-password" name="password" type="password" autocomplete="current-password" minlength="8" required></label>
+        <label id="confirm-password-field" hidden>Повтори новый пароль<input id="confirm-password" name="confirm-password" type="password" autocomplete="new-password" minlength="8"></label>
         <button class="game-start" id="account-submit" type="submit">Создать аккаунт</button>
         <p class="account-message" id="account-message" role="status"></p>
       </form>
+      <button class="account-forgot" id="forgot-password" type="button" hidden>Забыли пароль?</button>
       <button class="account-switch" id="account-switch" type="button">Уже есть аккаунт? Войти</button>
     </section>
   </div>
