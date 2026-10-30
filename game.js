@@ -55,6 +55,9 @@
     if (normalized.includes("email_not_confirmed") || normalized.includes("email not confirmed")) {
       return "Этот email ещё не подтверждён. Проверь Authentication → Users. Для письма подтверждения нужен доступный SMTP.";
     }
+    if (normalized.includes("already registered") || normalized.includes("user already exists") || normalized.includes("user already registered")) {
+      return "Этот email уже зарегистрирован. Нажми «Войти» и введи пароль.";
+    }
     if (normalized.includes("invalid_credentials") || normalized.includes("invalid login credentials")) {
       return "Supabase не принял email и пароль. Проверь раскладку клавиатуры, регистр и пароль, заданный при создании этого аккаунта.";
     }
@@ -290,7 +293,7 @@
       }
       return;
     }
-    setMode(configured);
+    setMode(false);
     accountModal.hidden = false;
     $("#player-name").focus();
   }
@@ -358,7 +361,7 @@
         result = await api("/auth/v1/signup", { method: "POST", body: { email, password, data: { display_name: name } } });
         if (!result.access_token) {
           setMode(false);
-          setMessage("Проверь почту и подтверди адрес, затем войди в аккаунт.");
+          setMessage("Если аккаунт с этим email уже есть, нажми «Войти». Если аккаунт новый, проверь почту и подтверди адрес.");
           return;
         }
       } else {
