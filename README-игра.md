@@ -7,7 +7,7 @@
 1. Создай бесплатный проект Supabase.
 2. В Supabase открой **SQL Editor → New query**, вставь содержимое `schema.sql` и нажми **Run**.
 3. В настройках проекта скопируй **Project URL** и публичный **anon/publishable key**.
-4. В `game.js` замени пустые значения в начале файла:
+4. В `game.js` настройки проекта указаны в начале файла. Если подключаешь другой Supabase-проект, замени их на значения из его Dashboard:
 
    ```js
    const backend = {
@@ -16,7 +16,8 @@
    };
    ```
 
-5. Загрузи обновлённые `index.html`, `game.js` и `schema.sql` в GitHub Pages.
+5. В Supabase открой **Authentication → URL Configuration** и добавь `https://kreker3232.github.io/our-countdown/` в список **Redirect URLs**. Это нужно для подтверждения почты и восстановления пароля.
+6. Загрузи обновлённые `index.html`, `game.js` и `schema.sql` в GitHub Pages.
 
 Используй только публичный anon/publishable key. **Не добавляй в сайт `service_role` key** — он даёт полный доступ к базе. В Supabase включи подтверждение email для регистрации; новый игрок подтвердит почту и затем войдёт.
 
