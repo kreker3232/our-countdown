@@ -27,6 +27,7 @@
   let session = readJSON(SESSION_KEY, null);
   let createAccount = true;
   let isPasswordRecovery = false;
+  let isEmailRecovery = false;
   let rows = [];
   let topRival = null;
   let game = null;
@@ -79,6 +80,7 @@
   function setAccountUI() {
     const loggedIn = configured && Boolean(session?.access_token);
     $("#account-open").textContent = loggedIn ? `${session.user?.user_metadata?.display_name || saved.name || "Игрок"} · Выйти` : "Войти / создать аккаунт";
+    $("#change-password-open").hidden = !loggedIn;
     $("#leader-status").textContent = configured ? "Общий рейтинг" : "Локальный режим";
     $("#leader-status").classList.toggle("connected", configured);
     $("#leader-note").textContent = configured
@@ -192,6 +194,7 @@
 
   function setMode(isCreate) {
     isPasswordRecovery = false;
+    isEmailRecovery = false;
     createAccount = isCreate;
     $("#account-title").textContent = configured ? (isCreate ? "Новый аккаунт" : "С возвращением") : "Имя игрока";
     $("#account-description").textContent = configured
@@ -216,11 +219,12 @@
     setMessage("");
   }
 
-  function showPasswordReset() {
+  function showPasswordReset(title = "Новый пароль", description = "Придумай новый пароль длиной не меньше 8 символов.", fromEmailRecovery = false) {
     setMode(false);
     isPasswordRecovery = true;
-    $("#account-title").textContent = "Новый пароль";
-    $("#account-description").textContent = "Придумай новый пароль длиной не меньше 8 символов.";
+    isEmailRecovery = fromEmailRecovery;
+    $("#account-title").textContent = title;
+    $("#account-description").textContent = description;
     $("#player-name-field").hidden = true;
     $("#player-email").parentElement.hidden = true;
     $("#player-email").required = false;
@@ -271,7 +275,7 @@
       expires_at: Math.floor(Date.now() / 1000) + expiresIn
     };
     history.replaceState(null, "", `${window.location.pathname}${window.location.search}`);
-    showPasswordReset();
+    showPasswordReset("Новый пароль", "Придумай новый пароль длиной не меньше 8 символов.", true);
     accountModal.hidden = false;
     $("#player-password").focus();
   }
@@ -291,6 +295,19 @@
     $("#player-name").focus();
   }
 
+  async function openPasswordChange() {
+    if (!await ensureSession()) {
+      setAccountUI();
+      setMode(false);
+      accountModal.hidden = false;
+      setMessage("Сессия аккаунта на этом устройстве истекла. Войди снова, затем сможешь сменить пароль.");
+      return;
+    }
+    showPasswordReset("Сменить пароль", "Задай новый пароль здесь, затем используй его на втором устройстве.");
+    accountModal.hidden = false;
+    $("#player-password").focus();
+  }
+
   async function submitAccount(event) {
     event.preventDefault();
     if (isPasswordRecovery) {
@@ -301,17 +318,23 @@
       button.disabled = true;
       button.textContent = "Сохраняем…";
       try {
+        if (!await ensureSession()) throw new Error("Сессия истекла. Войди в аккаунт и попробуй ещё раз.");
         await api("/auth/v1/user", { method: "PUT", auth: true, body: { password } });
-        session = null;
-        localStorage.removeItem(SESSION_KEY);
-        setMode(false);
-        accountModal.hidden = false;
-        setMessage("Пароль обновлён. Теперь войди с новым паролем.");
+        if (isEmailRecovery) {
+          session = null;
+          localStorage.removeItem(SESSION_KEY);
+        } else {
+          localStorage.setItem(SESSION_KEY, JSON.stringify(session));
+        }
+        accountModal.hidden = true;
+        setAccountUI();
+        $("#leader-note").textContent = "Пароль обновлён. Теперь войди на другом устройстве с новым паролем.";
+        if (!isEmailRecovery) await refreshLeaderboard();
       } catch (error) {
         setMessage(authErrorMessage(error));
       } finally {
         button.disabled = false;
-        button.textContent = "Войти";
+        button.textContent = "Сохранить пароль";
       }
       return;
     }
@@ -569,6 +592,7 @@
 
   startButton.addEventListener("click", startGame);
   $("#account-open").addEventListener("click", openAccount);
+  $("#change-password-open").addEventListener("click", openPasswordChange);
   $("#account-close").addEventListener("click", () => { accountModal.hidden = true; });
   accountModal.addEventListener("click", (event) => { if (event.target === accountModal) accountModal.hidden = true; });
   $("#account-switch").addEventListener("click", () => setMode(!createAccount));
