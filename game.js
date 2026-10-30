@@ -26,6 +26,7 @@
   let saved = readJSON(STORAGE_KEY, { best: 0, name: "" });
   let session = readJSON(SESSION_KEY, null);
   let createAccount = true;
+  let isPasswordRecovery = false;
   let rows = [];
   let topRival = null;
   let game = null;
@@ -175,6 +176,7 @@
   }
 
   function setMode(isCreate) {
+    isPasswordRecovery = false;
     createAccount = isCreate;
     $("#account-title").textContent = configured ? (isCreate ? "Новый аккаунт" : "С возвращением") : "Имя игрока";
     $("#account-description").textContent = configured
@@ -189,8 +191,74 @@
     $("#account-submit").textContent = configured ? (isCreate ? "Создать аккаунт" : "Войти") : "Сохранить имя";
     $("#account-switch").hidden = !configured;
     $("#account-switch").textContent = isCreate ? "Уже есть аккаунт? Войти" : "Нет аккаунта? Создать";
+    $("#forgot-password").hidden = !configured || isCreate;
+    $("#confirm-password-field").hidden = true;
+    $("#confirm-password").required = false;
+    $("#password-field").hidden = !configured;
+    $("#password-field").firstChild.textContent = "Пароль";
+    $("#player-password").autocomplete = isCreate ? "new-password" : "current-password";
     $("#player-name").value = saved.name || "";
     setMessage("");
+  }
+
+  function showPasswordReset() {
+    setMode(false);
+    isPasswordRecovery = true;
+    $("#account-title").textContent = "Новый пароль";
+    $("#account-description").textContent = "Придумай новый пароль длиной не меньше 8 символов.";
+    $("#player-name-field").hidden = true;
+    $("#player-email").parentElement.hidden = true;
+    $("#player-email").required = false;
+    $("#password-field").hidden = false;
+    $("#password-field").firstChild.textContent = "Новый пароль";
+    $("#player-password").autocomplete = "new-password";
+    $("#confirm-password-field").hidden = false;
+    $("#confirm-password").required = true;
+    $("#account-submit").textContent = "Сохранить пароль";
+    $("#account-switch").hidden = true;
+    $("#forgot-password").hidden = true;
+  }
+
+  async function requestPasswordReset() {
+    const email = $("#player-email").value.trim();
+    if (!email) {
+      $("#player-email").focus();
+      setMessage("Сначала введи email своего аккаунта.");
+      return;
+    }
+    const button = $("#forgot-password");
+    button.disabled = true;
+    button.textContent = "Отправляем письмо…";
+    try {
+      const redirectTo = `${window.location.origin}${window.location.pathname}`;
+      await api(`/auth/v1/recover?redirect_to=${encodeURIComponent(redirectTo)}`, {
+        method: "POST",
+        body: { email }
+      });
+      setMessage("Если аккаунт с таким email существует, письмо со ссылкой уже отправлено.");
+    } catch (error) {
+      setMessage(error.message);
+    } finally {
+      button.disabled = false;
+      button.textContent = "Забыли пароль?";
+    }
+  }
+
+  function handlePasswordRecoveryLink() {
+    const params = new URLSearchParams(window.location.hash.slice(1));
+    if (params.get("type") !== "recovery" || !params.get("access_token")) return;
+    const expiresIn = Number(params.get("expires_in")) || 3600;
+    session = {
+      access_token: params.get("access_token"),
+      refresh_token: params.get("refresh_token"),
+      token_type: params.get("token_type") || "bearer",
+      expires_in: expiresIn,
+      expires_at: Math.floor(Date.now() / 1000) + expiresIn
+    };
+    history.replaceState(null, "", `${window.location.pathname}${window.location.search}`);
+    showPasswordReset();
+    accountModal.hidden = false;
+    $("#player-password").focus();
   }
 
   function openAccount() {
@@ -210,6 +278,28 @@
 
   async function submitAccount(event) {
     event.preventDefault();
+    if (isPasswordRecovery) {
+      const password = $("#player-password").value;
+      if (password.length < 8) return setMessage("Пароль должен быть не короче 8 символов.");
+      if (password !== $("#confirm-password").value) return setMessage("Пароли не совпадают.");
+      const button = $("#account-submit");
+      button.disabled = true;
+      button.textContent = "Сохраняем…";
+      try {
+        await api("/auth/v1/user", { method: "PUT", auth: true, body: { password } });
+        session = null;
+        localStorage.removeItem(SESSION_KEY);
+        setMode(false);
+        accountModal.hidden = false;
+        setMessage("Пароль обновлён. Теперь войди с новым паролем.");
+      } catch (error) {
+        setMessage(error.message);
+      } finally {
+        button.disabled = false;
+        button.textContent = "Войти";
+      }
+      return;
+    }
     const name = $("#player-name").value.trim().replace(/\s+/g, " ");
     if (!configured) {
       if (!name) return setMessage("Введи имя, чтобы сохранить личный рекорд.");
@@ -467,6 +557,7 @@
   $("#account-close").addEventListener("click", () => { accountModal.hidden = true; });
   accountModal.addEventListener("click", (event) => { if (event.target === accountModal) accountModal.hidden = true; });
   $("#account-switch").addEventListener("click", () => setMode(!createAccount));
+  $("#forgot-password").addEventListener("click", requestPasswordReset);
   accountForm.addEventListener("submit", submitAccount);
   document.addEventListener("keydown", (event) => { if (event.key === "Escape") accountModal.hidden = true; });
 
@@ -476,6 +567,7 @@
   setAccountUI();
   if (configured) refreshLeaderboard();
   else updateStats();
+  handlePasswordRecoveryLink();
   if (session?.access_token) {
     const expiry = session.expires_at ? session.expires_at * 1000 : 0;
     if (expiry && expiry < Date.now()) {
