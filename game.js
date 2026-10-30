@@ -48,6 +48,21 @@
     $("#account-message").textContent = message;
   }
 
+  function authErrorMessage(error) {
+    const message = String(error?.message || "");
+    const normalized = message.toLowerCase();
+    if (normalized.includes("email_not_confirmed") || normalized.includes("email not confirmed")) {
+      return "Этот email ещё не подтверждён. Проверь Authentication → Users. Для письма подтверждения нужен доступный SMTP.";
+    }
+    if (normalized.includes("invalid_credentials") || normalized.includes("invalid login credentials")) {
+      return "Не удалось войти. Проверь email и пароль. Если на этом устройстве было только сохранено имя, сначала создай настоящий аккаунт.";
+    }
+    if (normalized.includes("email_address_not_authorized")) {
+      return "Supabase пока не может отправить письмо на этот адрес. Настрой SMTP или используй адрес участника команды проекта.";
+    }
+    return message || "Не получилось связаться с сервером.";
+  }
+
   async function api(path, { method = "GET", body, auth = false } = {}) {
     const headers = { apikey: backend.anonKey, "Content-Type": "application/json" };
     if (auth && session?.access_token) headers.Authorization = `Bearer ${session.access_token}`;
@@ -63,7 +78,7 @@
 
   function setAccountUI() {
     const loggedIn = configured && Boolean(session?.access_token);
-    $("#account-open").textContent = loggedIn ? `${session.user?.user_metadata?.display_name || saved.name || "Игрок"} · Выйти` : (saved.name ? `${saved.name} · аккаунт` : "Войти / создать аккаунт");
+    $("#account-open").textContent = loggedIn ? `${session.user?.user_metadata?.display_name || saved.name || "Игрок"} · Выйти` : "Войти / создать аккаунт";
     $("#leader-status").textContent = configured ? "Общий рейтинг" : "Локальный режим";
     $("#leader-status").classList.toggle("connected", configured);
     $("#leader-note").textContent = configured
@@ -237,7 +252,7 @@
       });
       setMessage("Если аккаунт с таким email существует, письмо со ссылкой уже отправлено.");
     } catch (error) {
-      setMessage(error.message);
+      setMessage(authErrorMessage(error));
     } finally {
       button.disabled = false;
       button.textContent = "Забыли пароль?";
@@ -293,7 +308,7 @@
         accountModal.hidden = false;
         setMessage("Пароль обновлён. Теперь войди с новым паролем.");
       } catch (error) {
-        setMessage(error.message);
+        setMessage(authErrorMessage(error));
       } finally {
         button.disabled = false;
         button.textContent = "Войти";
@@ -334,7 +349,7 @@
       accountModal.hidden = true;
       await refreshLeaderboard();
     } catch (error) {
-      setMessage(error.message);
+      setMessage(authErrorMessage(error));
     } finally {
       button.disabled = false;
       button.textContent = createAccount ? "Создать аккаунт" : "Войти";
