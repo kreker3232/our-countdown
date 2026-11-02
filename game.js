@@ -35,7 +35,6 @@
   let direction = 0;
   let activeTouch = null;
   let lastStats = "";
-  let lastBuffAnnouncement = "";
 
   function readJSON(key, fallback) {
     try { return JSON.parse(localStorage.getItem(key)) ?? fallback; }
@@ -392,15 +391,15 @@
   }
 
   function difficultyFor(score = 0) {
-    if (score < 5000) return { name: "Лёгкая", range: "до 5 000", spike: 0.045, fake: 0.055, breakable: 0.075 };
-    if (score < 10000) return { name: "Средняя", range: "5 000–10 000", spike: 0.11, fake: 0.13, breakable: 0.1 };
-    return { name: "Сложная", range: "после 10 000", spike: 0.2, fake: 0.22, breakable: 0.13 };
+    if (score < 5000) return { spike: 0.045, breakable: 0.075 };
+    if (score < 10000) return { spike: 0.11, breakable: 0.1 };
+    return { spike: 0.2, breakable: 0.13 };
   }
 
   function maybeAddCarrot(gameState, platform, score) {
-    if (platform.type === "spike" || platform.type === "fake") return;
+    if (platform.type === "spike") return;
     const tier = score < 5000 ? 0 : score < 10000 ? 1 : 2;
-    const chance = [0.065, 0.075, 0.085][tier];
+    const chance = [0.035, 0.04, 0.045][tier];
     if (Math.random() < chance) {
       gameState.carrots.push({
         x: platform.x + platform.width / 2,
@@ -418,9 +417,8 @@
       const roll = Math.random();
       const springChance = 0.075;
       if (roll < difficulty.spike) type = "spike";
-      else if (roll < difficulty.spike + difficulty.fake) type = "fake";
-      else if (roll < difficulty.spike + difficulty.fake + difficulty.breakable) type = "breakable";
-      else if (roll < difficulty.spike + difficulty.fake + difficulty.breakable + springChance) type = "spring";
+      else if (roll < difficulty.spike + difficulty.breakable) type = "breakable";
+      else if (roll < difficulty.spike + difficulty.breakable + springChance) type = "spring";
     }
     return {
       x: 24 + Math.random() * (WIDTH - 104),
@@ -502,28 +500,8 @@
     game.lastFrame = now;
     update(dt, now);
     draw(now);
-    updateGameFeedback(now);
     updateStats();
     animationId = requestAnimationFrame(frame);
-  }
-
-  function updateGameFeedback(now = performance.now()) {
-    const score = game?.score || 0;
-    const difficulty = difficultyFor(score);
-    $("#game-difficulty").textContent = `${difficulty.name} сложность · ${difficulty.range}`;
-    const seconds = Math.max(0, Math.ceil(((game?.invulnerableUntil || 0) - now) / 1000));
-    const status = $("#game-buff-status");
-    status.hidden = !game?.running || seconds <= 0;
-    if (!status.hidden) {
-      const text = `Защита от шипов · ${seconds} сек.`;
-      status.textContent = text;
-      if (text !== lastBuffAnnouncement) {
-        status.setAttribute("aria-label", `Морковка защищает от шипов ещё ${seconds} секунд`);
-        lastBuffAnnouncement = text;
-      }
-    } else {
-      lastBuffAnnouncement = "";
-    }
   }
 
   function update(dt, now) {
@@ -541,7 +519,7 @@
       const carrotY = carrot.y + Math.sin(now / 240 + carrot.phase) * 3;
       if (Math.abs(game.x - carrot.x) < 24 && Math.abs(game.y - carrotY) < 25) {
         carrot.collected = true;
-        game.invulnerableUntil = Math.max(now, game.invulnerableUntil) + 15000;
+        game.invulnerableUntil = now + 15000;
         game.toast = "Морковка! Щит от шипов на 15 секунд!";
         game.toastUntil = now + 1500;
       }
@@ -552,13 +530,6 @@
         if (platform.broken) continue;
         const platformX = platform.x + (platform.moving ? Math.sin(now / 700 + platform.phase) * 38 : 0);
         if (oldY + 18 <= platform.y && game.y + 18 >= platform.y && game.x + 13 > platformX && game.x - 13 < platformX + platform.width) {
-          if (platform.type === "fake") {
-            platform.broken = true;
-            platform.brokenAt = now;
-            game.toast = "Фальшивая платформа — насквозь!";
-            game.toastUntil = now + 850;
-            continue;
-          }
           if (platform.type === "spike") {
             game.y = platform.y - 18;
             if (now < game.invulnerableUntil) {
@@ -592,7 +563,7 @@
     if (screenY < 205) game.camera += 205 - screenY;
     game.score = Math.max(game.score, Math.floor((game.startY - game.y) / 5));
 
-    game.platforms = game.platforms.filter((p) => p.y + game.camera < HEIGHT + 36 && (!p.broken || now - p.brokenAt < (p.type === "fake" ? 110 : 330)));
+    game.platforms = game.platforms.filter((p) => p.y + game.camera < HEIGHT + 36 && (!p.broken || now - p.brokenAt < 330));
     game.carrots = game.carrots.filter((item) => !item.collected && item.y + game.camera < HEIGHT + 50);
     let minY = Math.min(...game.platforms.map((p) => p.y), HEIGHT);
     while (minY + game.camera > -45) {
@@ -625,11 +596,10 @@
   function drawPlatform(x, y, width, platform = {}, now = performance.now()) {
     const { type = "normal", broken = false, brokenAt = 0 } = platform;
     ctx.save();
-    if (broken) ctx.globalAlpha = Math.max(0, 1 - (now - brokenAt) / (type === "fake" ? 110 : 330));
-    ctx.fillStyle = type === "fake" ? "rgba(255,253,250,.16)" : type === "spike" ? "#f7e3e0" : "#fffdfa";
-    ctx.strokeStyle = type === "fake" ? "#bd6671" : type === "breakable" ? "#d8a36e" : type === "spike" ? "#ca7379" : "#d9b9b4";
-    ctx.lineWidth = type === "fake" ? 2 : 1.5;
-    if (type === "fake") ctx.setLineDash([5, 3]);
+    if (broken) ctx.globalAlpha = Math.max(0, 1 - (now - brokenAt) / 330);
+    ctx.fillStyle = type === "spike" ? "#f7e3e0" : "#fffdfa";
+    ctx.strokeStyle = type === "breakable" ? "#d8a36e" : type === "spike" ? "#ca7379" : "#d9b9b4";
+    ctx.lineWidth = 1.5;
     ctx.beginPath();
     ctx.roundRect(x, y, width, 12, 6);
     ctx.fill();
@@ -658,12 +628,6 @@
       ctx.beginPath();
       ctx.ellipse(x + width / 2, y - 13, 5, 2.5, 0, 0, Math.PI * 2);
       ctx.fill();
-    } else if (type === "fake") {
-      ctx.setLineDash([3, 3]);
-      ctx.beginPath();
-      ctx.moveTo(x + 12, y + 6);
-      ctx.lineTo(x + width - 12, y + 6);
-      ctx.stroke();
     } else {
       ctx.fillStyle = type === "breakable" ? "#e8bb87" : "#dfadb0";
       ctx.beginPath();
