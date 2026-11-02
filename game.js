@@ -35,6 +35,7 @@
   let direction = 0;
   let activeTouch = null;
   let lastStats = "";
+  let lastBuffAnnouncement = "";
 
   function readJSON(key, fallback) {
     try { return JSON.parse(localStorage.getItem(key)) ?? fallback; }
@@ -390,24 +391,43 @@
     draw();
   }
 
+  function difficultyFor(score = 0) {
+    if (score < 5000) return { name: "Лёгкая", range: "до 5 000", spike: 0.045, fake: 0.055, breakable: 0.075 };
+    if (score < 10000) return { name: "Средняя", range: "5 000–10 000", spike: 0.11, fake: 0.13, breakable: 0.1 };
+    return { name: "Сложная", range: "после 10 000", spike: 0.2, fake: 0.22, breakable: 0.13 };
+  }
+
+  function maybeAddCarrot(gameState, platform, score) {
+    if (platform.type === "spike" || platform.type === "fake") return;
+    const tier = score < 5000 ? 0 : score < 10000 ? 1 : 2;
+    const chance = [0.065, 0.075, 0.085][tier];
+    if (Math.random() < chance) {
+      gameState.carrots.push({
+        x: platform.x + platform.width / 2,
+        y: platform.y - 28,
+        phase: Math.random() * Math.PI * 2,
+        collected: false
+      });
+    }
+  }
+
   function makePlatform(y, score = 0, safe = false) {
-    const progress = Math.min(1, score / 900);
+    const difficulty = difficultyFor(score);
     let type = "normal";
     if (!safe) {
       const roll = Math.random();
-      const breakChance = 0.1 + progress * 0.06;
-      const spikeChance = 0.055 + progress * 0.035;
       const springChance = 0.075;
-      if (roll < breakChance) type = "breakable";
-      else if (roll < breakChance + spikeChance) type = "spike";
-      else if (roll < breakChance + spikeChance + springChance) type = "spring";
+      if (roll < difficulty.spike) type = "spike";
+      else if (roll < difficulty.spike + difficulty.fake) type = "fake";
+      else if (roll < difficulty.spike + difficulty.fake + difficulty.breakable) type = "breakable";
+      else if (roll < difficulty.spike + difficulty.fake + difficulty.breakable + springChance) type = "spring";
     }
     return {
       x: 24 + Math.random() * (WIDTH - 104),
       y,
       width: 76,
       type,
-      moving: type === "normal" && !safe && Math.random() > 0.76 - Math.min(0.08, progress * 0.08),
+      moving: type === "normal" && !safe && Math.random() > 0.76,
       phase: Math.random() * Math.PI * 2,
       broken: false,
       brokenAt: 0
@@ -416,10 +436,13 @@
 
   function newGame() {
     const platforms = [];
+    const carrots = [];
     let y = HEIGHT - 28;
     let count = 0;
     while (y > -HEIGHT) {
-      platforms.push(makePlatform(y, 0, count < 4));
+      const platform = makePlatform(y, 0, count < 4);
+      platforms.push(platform);
+      maybeAddCarrot({ carrots }, platform, 0);
       count += 1;
       y -= 58 + Math.random() * 31;
     }
@@ -432,6 +455,8 @@
       score: 0,
       running: true,
       platforms,
+      carrots,
+      invulnerableUntil: 0,
       lastFrame: 0
     };
   }
@@ -477,8 +502,28 @@
     game.lastFrame = now;
     update(dt, now);
     draw(now);
+    updateGameFeedback(now);
     updateStats();
     animationId = requestAnimationFrame(frame);
+  }
+
+  function updateGameFeedback(now = performance.now()) {
+    const score = game?.score || 0;
+    const difficulty = difficultyFor(score);
+    $("#game-difficulty").textContent = `${difficulty.name} сложность · ${difficulty.range}`;
+    const seconds = Math.max(0, Math.ceil(((game?.invulnerableUntil || 0) - now) / 1000));
+    const status = $("#game-buff-status");
+    status.hidden = !game?.running || seconds <= 0;
+    if (!status.hidden) {
+      const text = `Защита от шипов · ${seconds} сек.`;
+      status.textContent = text;
+      if (text !== lastBuffAnnouncement) {
+        status.setAttribute("aria-label", `Морковка защищает от шипов ещё ${seconds} секунд`);
+        lastBuffAnnouncement = text;
+      }
+    } else {
+      lastBuffAnnouncement = "";
+    }
   }
 
   function update(dt, now) {
@@ -491,6 +536,17 @@
     game.vy += GRAVITY * dt;
     game.y += game.vy * dt;
 
+    for (const carrot of game.carrots) {
+      if (carrot.collected) continue;
+      const carrotY = carrot.y + Math.sin(now / 240 + carrot.phase) * 3;
+      if (Math.abs(game.x - carrot.x) < 24 && Math.abs(game.y - carrotY) < 25) {
+        carrot.collected = true;
+        game.invulnerableUntil = Math.max(now, game.invulnerableUntil) + 15000;
+        game.toast = "Морковка! Щит от шипов на 15 секунд!";
+        game.toastUntil = now + 1500;
+      }
+    }
+
     if (game.vy > 0) {
       for (const platform of game.platforms) {
         if (platform.broken) continue;
@@ -498,10 +554,16 @@
         if (oldY + 18 <= platform.y && game.y + 18 >= platform.y && game.x + 13 > platformX && game.x - 13 < platformX + platform.width) {
           if (platform.type === "spike") {
             game.y = platform.y - 18;
-            game.toast = "Осторожно, шипы!";
-            game.toastUntil = now + 1000;
-            endGame();
-            break;
+            if (now < game.invulnerableUntil) {
+              game.vy = JUMP;
+              game.toast = "Щит защитил от шипов!";
+              game.toastUntil = now + 1000;
+            } else {
+              game.toast = "Осторожно, шипы!";
+              game.toastUntil = now + 1000;
+              endGame();
+              break;
+            }
           }
           game.y = platform.y - 18;
           game.vy = platform.type === "spring" ? JUMP * 1.48 : JUMP;
@@ -513,6 +575,11 @@
           } else if (platform.type === "spring") {
             game.toast = "Пружинка! Высокий прыжок!";
             game.toastUntil = now + 1100;
+          } else if (platform.type === "fake") {
+            platform.broken = true;
+            platform.brokenAt = now;
+            game.toast = "Фальшивая платформа!";
+            game.toastUntil = now + 850;
           }
           break;
         }
@@ -523,11 +590,14 @@
     if (screenY < 205) game.camera += 205 - screenY;
     game.score = Math.max(game.score, Math.floor((game.startY - game.y) / 5));
 
-    game.platforms = game.platforms.filter((p) => p.y + game.camera < HEIGHT + 36 && (!p.broken || now - p.brokenAt < 330));
+    game.platforms = game.platforms.filter((p) => p.y + game.camera < HEIGHT + 36 && (!p.broken || now - p.brokenAt < (p.type === "fake" ? 110 : 330)));
+    game.carrots = game.carrots.filter((item) => !item.collected && item.y + game.camera < HEIGHT + 50);
     let minY = Math.min(...game.platforms.map((p) => p.y), HEIGHT);
     while (minY + game.camera > -45) {
       minY -= 58 + Math.random() * 31;
-      game.platforms.push(makePlatform(minY, game.score));
+      const platform = makePlatform(minY, game.score);
+      game.platforms.push(platform);
+      maybeAddCarrot(game, platform, game.score);
     }
 
     if (game.y + game.camera > HEIGHT + 35) endGame();
@@ -604,11 +674,52 @@
     ctx.restore();
   }
 
-  function drawPlayer(x, y) {
+  function drawCarrot(x, y, now, phase = 0) {
+    ctx.save();
+    ctx.translate(x, y + Math.sin(now / 240 + phase) * 3);
+    ctx.rotate(.35 + Math.sin(now / 450 + phase) * .08);
+    ctx.fillStyle = "rgba(233,151,87,.16)";
+    ctx.beginPath();
+    ctx.arc(0, 0, 15, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = "#ee9957";
+    ctx.strokeStyle = "#d77a42";
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(-5, -8);
+    ctx.quadraticCurveTo(0, -5, 6, -8);
+    ctx.lineTo(1, 10);
+    ctx.quadraticCurveTo(0, 13, -1, 10);
+    ctx.closePath();
+    ctx.fill();
+    ctx.stroke();
+    ctx.strokeStyle = "#78a36a";
+    ctx.lineWidth = 2;
+    ctx.lineCap = "round";
+    ctx.beginPath();
+    ctx.moveTo(0, -7);
+    ctx.quadraticCurveTo(-6, -14, -8, -12);
+    ctx.moveTo(0, -7);
+    ctx.quadraticCurveTo(0, -15, 2, -14);
+    ctx.moveTo(0, -7);
+    ctx.quadraticCurveTo(6, -14, 8, -11);
+    ctx.stroke();
+    ctx.restore();
+  }
+
+  function drawPlayer(x, y, protectedFromSpikes = false, now = performance.now()) {
     ctx.save();
     ctx.translate(x, y);
     ctx.fillStyle = "rgba(98,63,68,.12)";
     ctx.beginPath(); ctx.ellipse(0, 19, 15, 4, 0, 0, Math.PI * 2); ctx.fill();
+    if (protectedFromSpikes) {
+      const pulse = 1 + Math.sin(now / 150) * .05;
+      ctx.strokeStyle = "rgba(112,168,137,.8)";
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.arc(0, 0, 25 * pulse, 0, Math.PI * 2);
+      ctx.stroke();
+    }
     ctx.fillStyle = "#fffdfa";
     ctx.strokeStyle = "#bd6671";
     ctx.lineWidth = 1.6;
@@ -642,7 +753,10 @@
       const y = platform.y + game.camera;
       if (y > -24 && y < HEIGHT + 20) drawPlatform(x, y, platform.width, platform, now);
     }
-    drawPlayer(game.x, game.y + game.camera);
+    for (const carrot of game.carrots) {
+      if (!carrot.collected) drawCarrot(carrot.x, carrot.y + game.camera, now, carrot.phase);
+    }
+    drawPlayer(game.x, game.y + game.camera, now < game.invulnerableUntil, now);
     if (game.toast && now < game.toastUntil) {
       ctx.save();
       ctx.font = "600 14px Trebuchet MS, sans-serif";
