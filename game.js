@@ -552,6 +552,13 @@
         if (platform.broken) continue;
         const platformX = platform.x + (platform.moving ? Math.sin(now / 700 + platform.phase) * 38 : 0);
         if (oldY + 18 <= platform.y && game.y + 18 >= platform.y && game.x + 13 > platformX && game.x - 13 < platformX + platform.width) {
+          if (platform.type === "fake") {
+            platform.broken = true;
+            platform.brokenAt = now;
+            game.toast = "Фальшивая платформа — насквозь!";
+            game.toastUntil = now + 850;
+            continue;
+          }
           if (platform.type === "spike") {
             game.y = platform.y - 18;
             if (now < game.invulnerableUntil) {
@@ -575,11 +582,6 @@
           } else if (platform.type === "spring") {
             game.toast = "Пружинка! Высокий прыжок!";
             game.toastUntil = now + 1100;
-          } else if (platform.type === "fake") {
-            platform.broken = true;
-            platform.brokenAt = now;
-            game.toast = "Фальшивая платформа!";
-            game.toastUntil = now + 850;
           }
           break;
         }
@@ -623,10 +625,11 @@
   function drawPlatform(x, y, width, platform = {}, now = performance.now()) {
     const { type = "normal", broken = false, brokenAt = 0 } = platform;
     ctx.save();
-    if (broken) ctx.globalAlpha = Math.max(0, 1 - (now - brokenAt) / 330);
-    ctx.fillStyle = type === "spike" ? "#f7e3e0" : "#fffdfa";
-    ctx.strokeStyle = type === "breakable" ? "#d8a36e" : type === "spike" ? "#ca7379" : "#d9b9b4";
-    ctx.lineWidth = 1.5;
+    if (broken) ctx.globalAlpha = Math.max(0, 1 - (now - brokenAt) / (type === "fake" ? 110 : 330));
+    ctx.fillStyle = type === "fake" ? "rgba(255,253,250,.16)" : type === "spike" ? "#f7e3e0" : "#fffdfa";
+    ctx.strokeStyle = type === "fake" ? "#bd6671" : type === "breakable" ? "#d8a36e" : type === "spike" ? "#ca7379" : "#d9b9b4";
+    ctx.lineWidth = type === "fake" ? 2 : 1.5;
+    if (type === "fake") ctx.setLineDash([5, 3]);
     ctx.beginPath();
     ctx.roundRect(x, y, width, 12, 6);
     ctx.fill();
@@ -655,6 +658,12 @@
       ctx.beginPath();
       ctx.ellipse(x + width / 2, y - 13, 5, 2.5, 0, 0, Math.PI * 2);
       ctx.fill();
+    } else if (type === "fake") {
+      ctx.setLineDash([3, 3]);
+      ctx.beginPath();
+      ctx.moveTo(x + 12, y + 6);
+      ctx.lineTo(x + width - 12, y + 6);
+      ctx.stroke();
     } else {
       ctx.fillStyle = type === "breakable" ? "#e8bb87" : "#dfadb0";
       ctx.beginPath();
